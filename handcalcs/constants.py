@@ -23,6 +23,9 @@ GREEK_LOWER = {
     "eta": "\\eta",
     "psi": "\\psi",
     "lamb": "\\lambda",
+    "phiM": "\\phi M",
+    "phiP": "\\phi P",
+    "phiR": "\\phi R",
 }
 
 GREEK_UPPER = {
