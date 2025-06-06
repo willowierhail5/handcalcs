@@ -303,7 +303,7 @@ def strip_cell_code(raw_source: str) -> str:
 
 
 def categorize_lines(
-    cell: Union[CalcCell, ParameterCell]
+    cell: Union[CalcCell, ParameterCell],
 ) -> Union[CalcCell, ParameterCell]:
     """
     Return 'cell' with the line data contained in cell_object.source categorized
@@ -1268,7 +1268,8 @@ def latex_repr(
                     f"\\left( {rendered_real} + {rendered_imag} j \\right)"
                 )
             elif use_scientific_notation and not isinstance(item, int):
-                rendered_string = f"{item:.{precision}e}"
+                # rendered_string = f"{item:.{precision}e}" per https://github.com/connorferster/handcalcs/issues/200#issuecomment-2074229737
+                rendered_string = f"{round(item, precision):{preferred_formatter}}"
                 rendered_string = swap_scientific_notation_str(rendered_string)
             elif not isinstance(item, int):
                 rendered_string = f"{item:.{precision}f}"
@@ -1400,7 +1401,7 @@ def calculate_adjusted_precision(elem, precision):
 
 @singledispatch
 def convert_applicable_long_lines(
-    line: Union[ConditionalLine, CalcLine]
+    line: Union[ConditionalLine, CalcLine],
 ):  # Not called for symbolic lines; see format_symbolic_cell()
     raise TypeError(
         f"Line type {type(line)} not yet implemented in convert_applicable_long_lines()."
@@ -1596,7 +1597,7 @@ def format_calc_line(line: CalcLine, **config_options) -> CalcLine:
     if line.comment:
         comment_space = "\\;"
         comment = format_strings(line.comment, comment=True)
-    line.latex = f"{latex_code[0:second_equals + 1]} {latex_code[second_equals + 2:]} {comment_space} {comment}\n"
+    line.latex = f"{latex_code[0 : second_equals + 1]} {latex_code[second_equals + 2 :]} {comment_space} {comment}\n"
     return line
 
 
@@ -3187,9 +3188,7 @@ def insert_parentheses(pycode_as_deque: deque, **config_options) -> deque:
                 # and not prev_item == lpar
                 and not skip_fraction_token
             ):
-
                 if test_for_fraction_exception(item, next_item):
-
                     skip_fraction_token = True
                     new_item = insert_parentheses(item)
                     swapped_deque.append(new_item)
