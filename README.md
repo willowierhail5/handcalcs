@@ -1,15 +1,14 @@
 <p>
-  <img src="https://travis-ci.org/connorferster/handcalcs.svg?branch=master">
 <a href='https://coveralls.io/github/connorferster/handcalcs?branch=master'><img src='https://coveralls.io/repos/github/connorferster/handcalcs/badge.svg?branch=master' alt='Coverage Status' /></a>
   <img src="https://img.shields.io/badge/code%20style-black-000000.svg">
   <img src="https://img.shields.io/pypi/v/handcalcs">
   <img src="https://img.shields.io/pypi/pyversions/handcalcs">
   <img src="https://img.shields.io/github/license/connorferster/handcalcs">
-  <img src="https://img.shields.io/pypi/dm/handcalcs">
+  <img src="https://static.pepy.tech/badge/handcalcs">
 </p>
 <p align="center">
   <img src="docs/images/handcalcs.jpg"><br>
-  Covert art by <a href = "https://www.instagram.com/joshuahoibergtattoos/">Joshua Hoiberg</a>
+  Covert art by <a href = "https://www.copperkettlegameworks.ca/">Joshua Hoiberg</a>
 </p>
 
 <h1 align = "center">handcalcs:<br>Python calculations in Jupyter,<br>as though you wrote them by hand.</h1>
@@ -44,6 +43,14 @@ Because `handcalcs` shows the numeric substitution, the calculations become sign
 You can install using pip:
 
 `pip install handcalcs`
+
+To install the optional nbconvert "no input" exporters, use:
+
+`pip install "handcalcs[exporters]"`
+
+**NEW**
+
+As of v1.9.0, handcalcs no longer installs the "no input" nbconvert exporters. This was done to lighten the installation load of handcalcs and to ensure the package has appropriate scope. The nbconvert exporters are now "out of scope" and are separately maintained at [https://github.com/connorferster/nb-hideinputs](nb-hideinputs).
 
 ## Basic Usage 1: As a Jupyter cell magic (`%%render`)
 `handcalcs` is intended to be used with either Jupyter Notebook or Jupyter Lab as a _cell magic_.
@@ -85,7 +92,7 @@ import handcalcs.render
 from math import sqrt, pi
 ```
 
-Now, you can use the `%%tex` magic!
+Now, you can also use the `%%tex` magic!
 
 ```python
 %%tex
@@ -121,13 +128,71 @@ Returns a tuple consisting of `(latex_code: str, locals: dict)`, where `locals` 
 * `override` is a str representing one of the acceptable override tags (see below)
 * `precision` is an int to alter the of decimal precision displayed
 * `left` and `right` are strings that can precede and follow the encoded Latex string, such as `\\[` and `\\]` or `$` and `$`
-* `jupyter_display`, when True, will return only the `locals` dictionary and instead will display the encoded Latex string rendering with `display(Latex(latex_code))` from `IPython.display`. Will return an error if not used within 
+* `jupyter_display`, when True, will return only the `locals` dictionary and instead will display the encoded Latex string rendering with `display(Latex(latex_code))` from `IPython.display`. Will return an error if not used within
+* `record`, when True, will activate the `HandcalcsCallRecorder` to allow the function to "recall" previous outputs (see below) **New in v1.8.0**
 
 In your decorated function, everything between `def my_calc(...)` and a return statement (if any) is now like the code in a Jupyter cell, except it's a standard Python function.
 
 Used in this way, you can use `@handcalc()` to dynamically generate Latex code for display in Jupyter and non-Jupypter Python environments (e.g. streamlit). 
 
 ![Parameters](docs/images/decorator.png)
+
+### HandcalcsCallRecorder (New in v1.8.0)
+
+The `HandcalcsCallRecorder` is a new kind of function wrapper that is available from the `@handcalc` decorator. To activate it, select `record=True` as one of the arguments in the decorator function.
+
+The intended use case is during iterations. In engineering, it is common to compute a whole bunch of values in a table or DataFrame. The table itself contains the results of the computations but the table does not necessarily reveal the computation steps. The `HandcalcsCallRecorder` allows you to display the calculation for one of the calculation iterations that have been processed by your decorated function, as shown in the example below:
+
+![HandcalcsCallRecorder](docs/images/call_recorder.gif)
+
+---
+
+## Global config options (New in v1.6.0)
+
+This is a major new release for handcalcs and introduces the global configuration feature. This allows users to have control over several options of how handcalcs works. The configuration options, with their default values, are as follow:
+
+* `decimal_separator = "."`
+* `latex_block_start = "\\["`
+* `latex_block_end = "\\]"`
+* `math_environment_start = "aligned"`
+* `math_environment_end = "aligned"`
+* `line_break = "\\\\[10pt]"`
+* `use_scientific_notation =  False`
+* `display_precision = 3`
+* `underscore_subscripts = True`
+* `greek_exclusions = []`
+* `param_columns = 3`
+* `preferred_string_formatter = "L"`
+* `custom_symbols = {}`
+
+### Config API
+
+```python
+import handcalcs.render
+
+handcalcs.set_option("display_precision", 4)
+handcalcs.set_option("param_columns", 5) 
+handcalcs.set_option("line_break", "\\\\[20pt]") 
+handcalcs.set_option("greek_exclusions", ["psi"]) # etc...
+```
+These changes now affect all cells rendered in the current session. If you want to permanently update the `config.json` file with these changes (so handcalcs will always load up with these options), you can then call `handcalcs.save_config()` and the changes will be saved (and thus immediately available in the next session).
+
+#### Custom Symbols (New in v1.7.0)
+
+You can now add _custom symbols_ to your global config to handle ALL of the cases which handcalcs does not account for.
+
+e.g.
+
+```python
+handcalcs.set_option("custom_symbols", {"V_dot": "\\dot{V}", "N_star": "N^{*}"})
+```
+
+Will now allow this kind of rendering:
+
+![Custom symbols example showing the use of V_dot and N_star](docs/images/custom_symbols.png)
+
+The docstring in the `handcalcs.set_option()` function demonstrates which options are available and what values they take.
+---
 
 
 ## Override tags
@@ -256,32 +321,32 @@ Subscripts in variable names are automatically created when `_` is used in the v
 
 Any variable name that contains a Greek letter (e.g. "pi", "upsilon", "eta", etc.) as a string or substring will be replaced by the appropriate Latex code to represent that Greek letter.
 
-| symbol | substitution | symbol | substitution |
-|--------|--------------|--------|--------------|
-| `alpha` |         α     | `Alpha` |       Α       |
-| `beta`  |        β      | `Beta` |        Β       |
-| `gamma` |        γ     | `Gamma` |        Γ      |
-| `delta` |       δ      | `Delta` |        Δ      |
-| `epsilon` |    ε       | `Epsilon` |      Ε      |
-| `zeta`  |     ζ        | `Zeta`  |        Ζ      |
-| `eta`  |       η       | `Eta`  |          Η     |
-| `theta`|       θ       | `Theta` |         Θ     |
-| `iota` |       ι       | `Iota` |         Ι      |
-| `kappa` |      κ       | `Kappa` |         Κ     |
-| `lamb`  |     λ        | `Lamb` |          Λ     |
-| `mu`    |     μ        | `Mu` |           Μ      |
-| `nu`    |      ν       | `Nu` |           N      |
-| `xi`    |      ξ       | `Xi` |            Ξ     |
-| `omicron` |    ο       | `Omicron` |       Ο     |
-| `pi`    |      π       | `Pi` |            Π     |
-| `rho`  |       ρ       | `Rho` |           Ρ     |
-| `sigma` |      σ       | `Sigma` |         Σ     |
-| `tau`   |      τ       | `Tau`  |          Τ     |
-| `upsilon` |    υ       | `Upsilon` |       Υ     |
-| `phi`    |     φ       | `Phi`  |          Φ     |
-| `chi`    |     χ       | `Chi`   |         Χ     |
-| `psi`   |      ψ       | `Psi`   |         Ψ     |
-| `omega` |      ω       | `Omega` |         Ω     |  
+| symbol                  | substitution | symbol | substitution |
+|-------------------------|--------------|--------|--------------|
+| `alpha`                 | α            | `Alpha` |       Α       |
+| `beta`                  | β            | `Beta` |        Β       |
+| `gamma`                 | γ            | `Gamma` |        Γ      |
+| `delta`                 | δ            | `Delta` |        Δ      |
+| `epsilon`, `varepsilon` | ϵ, ε         | `Epsilon` |      Ε      |
+| `zeta`                  | ζ            | `Zeta`  |        Ζ      |
+| `eta`                   | η            | `Eta`  |          Η     |
+| `theta`, `vartheta`     | θ, ϑ         | `Theta` |         Θ     |
+| `iota`                  | ι            | `Iota` |         Ι      |
+| `kappa`                 | κ            | `Kappa` |         Κ     |
+| `lamb`                  | λ            | `Lamb` |          Λ     |
+| `mu`                    | μ            | `Mu` |           Μ      |
+| `nu`                    | ν            | `Nu` |           N      |
+| `xi`                    | ξ            | `Xi` |            Ξ     |
+| `omicron`               | ο            | `Omicron` |       Ο     |
+| `pi`, `varpi`           | π, ϖ         | `Pi` |            Π     |
+| `rho`, `varrho`         | ρ, ϱ         | `Rho` |           Ρ     |
+| `sigma`, `varsigma`     | σ, ς         | `Sigma` |         Σ     |
+| `tau`                   | τ            | `Tau`  |          Τ     |
+| `upsilon`               | υ            | `Upsilon` |       Υ     |
+| `phi`, `varphi`         | φ, ϕ         | `Phi`  |          Φ     |
+| `chi`                   | χ            | `Chi`   |         Χ     |
+| `psi`                   | ψ            | `Psi`   |         Ψ     |
+| `omega`                 | ω            | `Omega` |         Ω     |  
 
 * Using lower case letters as your variable name will make a lower case Greek letter.
 
