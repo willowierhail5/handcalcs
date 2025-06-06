@@ -26,6 +26,7 @@ GREEK_LOWER = {
     "phiM": "\\phi M",
     "phiP": "\\phi P",
     "phiR": "\\phi R",
+    "phiV": "\\phi V",
 }
 
 GREEK_UPPER = {
